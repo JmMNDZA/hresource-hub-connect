@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import EmployeeEditDialog from "./EmployeeEditDialog";
-import { trash, edit } from "lucide-react";
+import { Trash, Edit } from "lucide-react";
 
 interface EmployeeListProps {
   employees: any[];
@@ -90,14 +90,14 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                       variant="ghost"
                       onClick={() => handleEditClick(employee)}
                     >
-                      <edit className="h-4 w-4" />
+                      <Edit className="h-4 w-4" />
                     </Button>
                     <Button
                       size="icon"
                       variant="ghost"
                       onClick={() => handleDeleteClick(employee.empno)}
                     >
-                      <trash className="h-4 w-4" />
+                      <Trash className="h-4 w-4" />
                     </Button>
                   </TableCell>
                 </TableRow>
