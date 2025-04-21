@@ -2,6 +2,8 @@
 import SignUpDialog from "@/components/SignUpDialog";
 import SignInDialog from "@/components/SignInDialog";
 import { useAuth } from "../App"; // Now correctly imported
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const Index = () => {
   const { user } = useAuth();
@@ -16,14 +18,19 @@ const Index = () => {
           Streamline your HR processes. Empower your team.<br />
           All-in-one web platform for modern HR management.
         </p>
-        <div className="flex flex-col md:flex-row gap-4 w-full max-w-xs">
+        <div className="flex flex-col md:flex-row gap-4 w-full">
           {user ? (
-            <span className="text-green-700 font-bold">Signed in as {user.email}</span>
+            <div className="flex flex-col items-center w-full gap-4">
+              <span className="text-green-700 font-bold">Signed in as {user.email}</span>
+              <Button className="w-full" asChild>
+                <Link to="/dashboard">Go to Dashboard</Link>
+              </Button>
+            </div>
           ) : (
-            <>
+            <div className="flex flex-col md:flex-row gap-4 w-full max-w-xs">
               <SignInDialog />
               <SignUpDialog />
-            </>
+            </div>
           )}
         </div>
       </div>
