@@ -8,7 +8,8 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "../App";
 import EmployeeList from "@/components/EmployeeList";
-import { Search } from "lucide-react";
+import EmployeeAddDialog from "@/components/EmployeeAddDialog";
+import { Search, Plus } from "lucide-react";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -17,6 +18,7 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [employees, setEmployees] = useState<any[]>([]);
   const [filteredEmployees, setFilteredEmployees] = useState<any[]>([]);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
 
   // Fetch employee data
   useEffect(() => {
@@ -35,10 +37,10 @@ const Dashboard = () => {
       const firstName = employee.firstname?.toLowerCase() || "";
       const lastName = employee.lastname?.toLowerCase() || "";
       const empNo = employee.empno?.toLowerCase() || "";
-      
-      return firstName.includes(query) || 
-             lastName.includes(query) || 
-             empNo.includes(query);
+
+      return firstName.includes(query) ||
+        lastName.includes(query) ||
+        empNo.includes(query);
     });
 
     setFilteredEmployees(filtered);
@@ -84,10 +86,10 @@ const Dashboard = () => {
 
       if (error) throw error;
 
-      setEmployees(prevEmployees => 
+      setEmployees(prevEmployees =>
         prevEmployees.filter(employee => employee.empno !== empno)
       );
-      
+
       toast({
         title: "Employee deleted",
         description: "Employee has been successfully removed",
@@ -112,12 +114,12 @@ const Dashboard = () => {
       if (error) throw error;
 
       // Update the local state with the updated employee
-      setEmployees(prevEmployees => 
-        prevEmployees.map(employee => 
+      setEmployees(prevEmployees =>
+        prevEmployees.map(employee =>
           employee.empno === empno ? { ...employee, ...updatedData } : employee
         )
       );
-      
+
       toast({
         title: "Employee updated",
         description: "Employee details have been successfully updated",
@@ -130,6 +132,14 @@ const Dashboard = () => {
       });
       console.error("Error updating employee:", error);
     }
+  };
+
+  const handleAddEmployeeClick = () => {
+    setAddDialogOpen(true);
+  };
+
+  const handleEmployeeAdded = async () => {
+    await fetchEmployees();
   };
 
   return (
@@ -151,27 +161,38 @@ const Dashboard = () => {
           <CardHeader className="pb-3">
             <CardTitle className="flex justify-between items-center">
               <span>Employee Management</span>
-              <div className="relative w-full max-w-xs">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search employees..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 w-full"
-                />
+              <div className="flex gap-4">
+                <div className="relative w-full max-w-xs">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Search employees..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 w-full"
+                  />
+                </div>
+                <Button onClick={handleAddEmployeeClick} variant="default" className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Add Employee
+                </Button>
               </div>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <EmployeeList 
-              employees={filteredEmployees} 
-              isLoading={isLoading} 
+            <EmployeeList
+              employees={filteredEmployees}
+              isLoading={isLoading}
               onDelete={handleEmployeeDelete}
               onUpdate={handleEmployeeUpdate}
               onRefresh={fetchEmployees}
             />
           </CardContent>
         </Card>
+        <EmployeeAddDialog
+          open={addDialogOpen}
+          onOpenChange={setAddDialogOpen}
+          onEmployeeAdded={handleEmployeeAdded}
+        />
       </div>
     </div>
   );
