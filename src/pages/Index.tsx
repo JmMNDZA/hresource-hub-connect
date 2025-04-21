@@ -1,10 +1,10 @@
-
-// Home page for HR management system
-
 import SignUpDialog from "@/components/SignUpDialog";
 import SignInDialog from "@/components/SignInDialog";
+import { useAuth } from "../App";
 
 const Index = () => {
+  const { user } = useAuth();
+
   return (
     <div className="min-h-screen bg-gradient-to-tr from-[#d3e4fd] via-[#f1f0fb] to-white flex items-center justify-center px-4 py-12">
       <div className="bg-white/80 shadow-xl rounded-2xl px-8 py-10 max-w-lg w-full flex flex-col items-center border border-[#e8e8fc] backdrop-blur-md">
@@ -16,8 +16,14 @@ const Index = () => {
           All-in-one web platform for modern HR management.
         </p>
         <div className="flex flex-col md:flex-row gap-4 w-full max-w-xs">
-          <SignInDialog />
-          <SignUpDialog />
+          {user ? (
+            <span className="text-green-700 font-bold">Signed in as {user.email}</span>
+          ) : (
+            <>
+              <SignInDialog />
+              <SignUpDialog />
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -25,4 +31,3 @@ const Index = () => {
 };
 
 export default Index;
-
