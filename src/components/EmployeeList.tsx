@@ -11,7 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import EmployeeEditDialog from "./EmployeeEditDialog";
-import { Trash, Edit } from "lucide-react";
+import { Trash, Edit, Briefcase } from "lucide-react";
+import JobHistoryDialog from "./JobHistoryDialog";
 
 interface EmployeeListProps {
   employees: any[];
@@ -29,6 +30,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   onRefresh,
 }) => {
   const [editingEmployee, setEditingEmployee] = useState<any | null>(null);
+  const [jobHistoryEmployee, setJobHistoryEmployee] = useState<any | null>(null);
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "N/A";
@@ -47,6 +49,10 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
     if (window.confirm("Are you sure you want to delete this employee?")) {
       await onDelete(empno);
     }
+  };
+
+  const handleJobHistoryClick = (employee: any) => {
+    setJobHistoryEmployee(employee);
   };
 
   return (
@@ -99,6 +105,14 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                     >
                       <Trash className="h-4 w-4" />
                     </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleJobHistoryClick(employee)}
+                      title="Manage Job History"
+                    >
+                      <Briefcase className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -115,6 +129,14 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
             await onUpdate(editingEmployee.empno, updatedData);
             setEditingEmployee(null);
           }}
+        />
+      )}
+
+      {jobHistoryEmployee && (
+        <JobHistoryDialog
+          employee={jobHistoryEmployee}
+          onClose={() => setJobHistoryEmployee(null)}
+          onRefresh={onRefresh}
         />
       )}
     </div>
