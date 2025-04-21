@@ -1,6 +1,7 @@
+
 import SignUpDialog from "@/components/SignUpDialog";
 import SignInDialog from "@/components/SignInDialog";
-import { useAuth } from "../App";
+import { useAuth } from "../App"; // Now correctly imported
 
 const Index = () => {
   const { user } = useAuth();

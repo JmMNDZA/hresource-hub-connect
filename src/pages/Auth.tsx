@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
@@ -20,7 +19,7 @@ const Auth = () => {
 
   // Subscribe to auth changes
   useEffect(() => {
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session?.user) {
         navigate("/");
@@ -33,7 +32,7 @@ const Auth = () => {
       }
     });
     return () => {
-      listener?.unsubscribe();
+      data.subscription.unsubscribe();
     };
   }, [navigate]);
 

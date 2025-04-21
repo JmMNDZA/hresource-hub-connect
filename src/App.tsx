@@ -13,7 +13,8 @@ import { supabase } from "@/integrations/supabase/client";
 // Create Auth Context
 const AuthContext = createContext<{ user: any; session: any }>({ user: null, session: null });
 
-const useAuth = () => useContext(AuthContext);
+// Export the useAuth hook so we can use it in other components
+export const useAuth = () => useContext(AuthContext);
 
 const queryClient = new QueryClient();
 
@@ -22,7 +23,8 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<any>(null);
 
   useEffect(() => {
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    // Fix the subscription access
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
     });
@@ -31,7 +33,8 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(session?.user ?? null);
     });
     return () => {
-      listener?.unsubscribe();
+      // Call unsubscribe() on the data object
+      data.subscription.unsubscribe();
     };
   }, []);
 
