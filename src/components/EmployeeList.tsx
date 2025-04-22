@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   Table,
@@ -32,6 +31,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
 }) => {
   const [editingEmployee, setEditingEmployee] = useState<any | null>(null);
   const [jobHistoryEmployee, setJobHistoryEmployee] = useState<any | null>(null);
+  const [deletingEmpno, setDeletingEmpno] = useState<string | null>(null);
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "N/A";
@@ -48,6 +48,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
 
   const handleDeleteClick = async (empno: string) => {
     if (window.confirm("Are you sure you want to delete this employee? This will also delete their entire job history.")) {
+      setDeletingEmpno(empno);
       try {
         await onDelete(empno);
         toast({
@@ -60,6 +61,9 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
           description: error.message,
           variant: "destructive",
         });
+        console.error("Delete employee error:", error);
+      } finally {
+        setDeletingEmpno(null);
       }
     }
   };
@@ -115,6 +119,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                       size="icon"
                       variant="ghost"
                       onClick={() => handleDeleteClick(employee.empno)}
+                      disabled={deletingEmpno === employee.empno}
                     >
                       <Trash className="h-4 w-4" />
                     </Button>

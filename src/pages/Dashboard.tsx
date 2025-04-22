@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
@@ -20,12 +19,10 @@ const Dashboard = () => {
   const [filteredEmployees, setFilteredEmployees] = useState<any[]>([]);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
 
-  // Fetch employee data
   useEffect(() => {
     fetchEmployees();
   }, []);
 
-  // Update filtered employees when search query or employees change
   useEffect(() => {
     if (!searchQuery.trim()) {
       setFilteredEmployees(employees);
@@ -90,10 +87,7 @@ const Dashboard = () => {
         prevEmployees.filter(employee => employee.empno !== empno)
       );
 
-      toast({
-        title: "Employee deleted",
-        description: "Employee has been successfully removed",
-      });
+      console.log("Employee deleted successfully:", empno);
     } catch (error: any) {
       toast({
         title: "Error deleting employee",
@@ -101,6 +95,7 @@ const Dashboard = () => {
         variant: "destructive",
       });
       console.error("Error deleting employee:", error);
+      throw error;
     }
   };
 
@@ -113,7 +108,6 @@ const Dashboard = () => {
 
       if (error) throw error;
 
-      // Update the local state with the updated employee
       setEmployees(prevEmployees =>
         prevEmployees.map(employee =>
           employee.empno === empno ? { ...employee, ...updatedData } : employee
