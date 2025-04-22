@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { Trash, Edit, Briefcase } from "lucide-react";
+import { Trash, Edit, Briefcase, ArrowUpDown } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import EmployeeEditDialog from "./EmployeeEditDialog";
 import JobHistoryDialog from "./JobHistoryDialog";
@@ -32,6 +32,10 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   const [editingEmployee, setEditingEmployee] = useState<any | null>(null);
   const [jobHistoryEmployee, setJobHistoryEmployee] = useState<any | null>(null);
   const [deletingEmpno, setDeletingEmpno] = useState<string | null>(null);
+  const [sortConfig, setSortConfig] = useState({
+    key: 'empno',
+    direction: 'asc'
+  });
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "N/A";
@@ -72,6 +76,28 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
     setJobHistoryEmployee(employee);
   };
 
+  const handleSort = (key: string) => {
+    setSortConfig(current => ({
+      key,
+      direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
+
+  const sortedEmployees = [...employees].sort((a, b) => {
+    if (!a[sortConfig.key] && !b[sortConfig.key]) return 0;
+    if (!a[sortConfig.key]) return 1;
+    if (!b[sortConfig.key]) return -1;
+
+    let comparison = 0;
+    if (typeof a[sortConfig.key] === 'string') {
+      comparison = a[sortConfig.key].localeCompare(b[sortConfig.key]);
+    } else {
+      comparison = a[sortConfig.key] < b[sortConfig.key] ? -1 : 1;
+    }
+
+    return sortConfig.direction === 'asc' ? comparison : -comparison;
+  });
+
   return (
     <div>
       {isLoading ? (
@@ -87,18 +113,60 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Employee ID</TableHead>
-                <TableHead>First Name</TableHead>
-                <TableHead>Last Name</TableHead>
-                <TableHead>Gender</TableHead>
-                <TableHead>Birth Date</TableHead>
-                <TableHead>Hire Date</TableHead>
-                <TableHead>Separation Date</TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => handleSort('empno')}
+                >
+                  Employee ID
+                  <ArrowUpDown className="ml-2 h-4 w-4 inline" />
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => handleSort('firstname')}
+                >
+                  First Name
+                  <ArrowUpDown className="ml-2 h-4 w-4 inline" />
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => handleSort('lastname')}
+                >
+                  Last Name
+                  <ArrowUpDown className="ml-2 h-4 w-4 inline" />
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => handleSort('gender')}
+                >
+                  Gender
+                  <ArrowUpDown className="ml-2 h-4 w-4 inline" />
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => handleSort('birthdate')}
+                >
+                  Birth Date
+                  <ArrowUpDown className="ml-2 h-4 w-4 inline" />
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => handleSort('hiredate')}
+                >
+                  Hire Date
+                  <ArrowUpDown className="ml-2 h-4 w-4 inline" />
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => handleSort('sepdate')}
+                >
+                  Separation Date
+                  <ArrowUpDown className="ml-2 h-4 w-4 inline" />
+                </TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {employees.map((employee) => (
+              {sortedEmployees.map((employee) => (
                 <TableRow key={employee.empno}>
                   <TableCell>{employee.empno}</TableCell>
                   <TableCell>{employee.firstname || "N/A"}</TableCell>
