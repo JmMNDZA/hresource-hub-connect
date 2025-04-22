@@ -10,8 +10,9 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import EmployeeEditDialog from "./EmployeeEditDialog";
 import { Trash, Edit, Briefcase } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import EmployeeEditDialog from "./EmployeeEditDialog";
 import JobHistoryDialog from "./JobHistoryDialog";
 
 interface EmployeeListProps {
@@ -46,8 +47,20 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   };
 
   const handleDeleteClick = async (empno: string) => {
-    if (window.confirm("Are you sure you want to delete this employee?")) {
-      await onDelete(empno);
+    if (window.confirm("Are you sure you want to delete this employee? This will also delete their entire job history.")) {
+      try {
+        await onDelete(empno);
+        toast({
+          title: "Employee deleted",
+          description: "Employee and their job history have been successfully removed",
+        });
+      } catch (error: any) {
+        toast({
+          title: "Error deleting employee",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     }
   };
 

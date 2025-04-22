@@ -114,6 +114,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_employee_jobhistory"
+            columns: ["empno"]
+            isOneToOne: false
+            referencedRelation: "employee"
+            referencedColumns: ["empno"]
+          },
+          {
             foreignKeyName: "jobhistory_deptcode_fkey"
             columns: ["deptcode"]
             isOneToOne: false
