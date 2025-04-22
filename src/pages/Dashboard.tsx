@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
@@ -76,6 +77,15 @@ const Dashboard = () => {
 
   const handleEmployeeDelete = async (empno: string) => {
     try {
+      // First delete all job history records for this employee
+      const { error: jobHistoryError } = await supabase
+        .from("jobhistory")
+        .delete()
+        .eq("empno", empno);
+
+      if (jobHistoryError) throw jobHistoryError;
+      
+      // Then delete the employee record
       const { error } = await supabase
         .from("employee")
         .delete()
@@ -87,7 +97,11 @@ const Dashboard = () => {
         prevEmployees.filter(employee => employee.empno !== empno)
       );
 
-      console.log("Employee deleted successfully:", empno);
+      toast({
+        title: "Employee deleted",
+        description: "Employee and their job history have been successfully removed",
+      });
+      console.log("Employee and job history deleted successfully:", empno);
     } catch (error: any) {
       toast({
         title: "Error deleting employee",
