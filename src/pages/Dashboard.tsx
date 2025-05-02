@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
@@ -273,63 +272,65 @@ const Dashboard = () => {
 
         <Card className="mb-8">
           <CardHeader className="pb-3">
-            <Tabs defaultValue="employees" value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <Tabs defaultValue="employees" value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="mb-4">
                 <TabsTrigger value="employees">Employees</TabsTrigger>
                 <TabsTrigger value="jobs">Jobs</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="employees">
-                <CardTitle className="flex justify-between items-center">
-                  <span>Employee Management</span>
-                  <div className="flex gap-4">
-                    <div className="relative w-full max-w-xs">
-                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        placeholder="Search employees..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 w-full"
-                      />
+              <div className="flex justify-between items-center">
+                {activeTab === "employees" ? (
+                  <CardTitle className="flex justify-between items-center w-full">
+                    <span>Employee Management</span>
+                    <div className="flex gap-4">
+                      <div className="relative w-full max-w-xs">
+                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          placeholder="Search employees..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="pl-10 w-full"
+                        />
+                      </div>
+                      <Button onClick={handleAddEmployeeClick} variant="default" className="flex items-center gap-2">
+                        <Plus className="h-4 w-4" />
+                        Add Employee
+                      </Button>
                     </div>
-                    <Button onClick={handleAddEmployeeClick} variant="default" className="flex items-center gap-2">
-                      <Plus className="h-4 w-4" />
-                      Add Employee
-                    </Button>
-                  </div>
-                </CardTitle>
+                  </CardTitle>
+                ) : (
+                  <CardTitle>
+                    <span>Job Management</span>
+                  </CardTitle>
+                )}
+              </div>
+              
+              <TabsContent value="employees">
+                <div className="mt-4">
+                  <EmployeeList
+                    employees={filteredEmployees}
+                    isLoading={isEmployeesLoading}
+                    onDelete={handleEmployeeDelete}
+                    onUpdate={handleEmployeeUpdate}
+                    onRefresh={fetchEmployees}
+                  />
+                </div>
               </TabsContent>
               
               <TabsContent value="jobs">
-                <CardTitle>
-                  <span>Job Management</span>
-                </CardTitle>
+                <div className="mt-4">
+                  <JobList
+                    jobs={jobs}
+                    isLoading={isJobsLoading}
+                    onDelete={handleJobDelete}
+                    onUpdate={handleJobUpdate}
+                    onRefresh={fetchJobs}
+                    onAdd={handleAddJobClick}
+                  />
+                </div>
               </TabsContent>
             </Tabs>
           </CardHeader>
-          
-          <CardContent>
-            <TabsContent value="employees" className="mt-0">
-              <EmployeeList
-                employees={filteredEmployees}
-                isLoading={isEmployeesLoading}
-                onDelete={handleEmployeeDelete}
-                onUpdate={handleEmployeeUpdate}
-                onRefresh={fetchEmployees}
-              />
-            </TabsContent>
-            
-            <TabsContent value="jobs" className="mt-0">
-              <JobList
-                jobs={jobs}
-                isLoading={isJobsLoading}
-                onDelete={handleJobDelete}
-                onUpdate={handleJobUpdate}
-                onRefresh={fetchJobs}
-                onAdd={handleAddJobClick}
-              />
-            </TabsContent>
-          </CardContent>
         </Card>
         
         {/* Dialogs */}
