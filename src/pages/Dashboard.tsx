@@ -12,6 +12,9 @@ import EmployeeAddDialog from "@/components/EmployeeAddDialog";
 import JobList from "@/components/JobList";
 import JobAddDialog from "@/components/JobAddDialog";
 import JobEditDialog from "@/components/JobEditDialog";
+import DepartmentList from "@/components/DepartmentList";
+import DepartmentAddDialog from "@/components/DepartmentAddDialog";
+import DepartmentEditDialog from "@/components/DepartmentEditDialog";
 import { Search, Plus } from "lucide-react";
 
 const Dashboard = () => {
@@ -33,10 +36,19 @@ const Dashboard = () => {
   const [editJobDialogOpen, setEditJobDialogOpen] = useState(false);
   const [currentJobCode, setCurrentJobCode] = useState("");
   const [currentJobDesc, setCurrentJobDesc] = useState("");
+  
+  // Departments state
+  const [isDepartmentsLoading, setIsDepartmentsLoading] = useState(false);
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [addDepartmentDialogOpen, setAddDepartmentDialogOpen] = useState(false);
+  const [editDepartmentDialogOpen, setEditDepartmentDialogOpen] = useState(false);
+  const [currentDeptCode, setCurrentDeptCode] = useState("");
+  const [currentDeptName, setCurrentDeptName] = useState("");
 
   useEffect(() => {
     fetchEmployees();
     fetchJobs();
+    fetchDepartments();
   }, []);
 
   useEffect(() => {
@@ -107,6 +119,31 @@ const Dashboard = () => {
       console.error("Error fetching jobs:", error);
     } finally {
       setIsJobsLoading(false);
+    }
+  };
+
+  const fetchDepartments = async () => {
+    setIsDepartmentsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("department")
+        .select("*")
+        .order("deptcode", { ascending: true });
+
+      if (error) {
+        throw error;
+      }
+
+      setDepartments(data || []);
+    } catch (error: any) {
+      toast({
+        title: "Error fetching departments",
+        description: error.message,
+        variant: "destructive",
+      });
+      console.error("Error fetching departments:", error);
+    } finally {
+      setIsDepartmentsLoading(false);
     }
   };
 
@@ -239,6 +276,63 @@ const Dashboard = () => {
     await fetchJobs();
   };
 
+  const handleDepartmentDelete = async (deptcode: string) => {
+    try {
+      // Check if department is used in jobhistory
+      const { data: jobHistory, error: checkError } = await supabase
+        .from("jobhistory")
+        .select("empno")
+        .eq("deptcode", deptcode)
+        .limit(1);
+
+      if (checkError) throw checkError;
+
+      if (jobHistory && jobHistory.length > 0) {
+        toast({
+          title: "Cannot delete department",
+          description: "This department is associated with employee history records and cannot be deleted",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Delete the department record
+      const { error } = await supabase
+        .from("department")
+        .delete()
+        .eq("deptcode", deptcode);
+
+      if (error) throw error;
+
+      setDepartments(prevDepartments =>
+        prevDepartments.filter(dept => dept.deptcode !== deptcode)
+      );
+
+      toast({
+        title: "Department deleted",
+        description: "Department has been successfully removed",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error deleting department",
+        description: error.message,
+        variant: "destructive",
+      });
+      console.error("Error deleting department:", error);
+      throw error;
+    }
+  };
+
+  const handleDepartmentUpdate = async (deptcode: string, updatedData: { deptname: string }) => {
+    setCurrentDeptCode(deptcode);
+    setCurrentDeptName(updatedData.deptname);
+    setEditDepartmentDialogOpen(true);
+  };
+
+  const handleDepartmentUpdateSubmit = async () => {
+    await fetchDepartments();
+  };
+
   const handleAddEmployeeClick = () => {
     setAddEmployeeDialogOpen(true);
   };
@@ -253,6 +347,14 @@ const Dashboard = () => {
 
   const handleJobAdded = async () => {
     await fetchJobs();
+  };
+
+  const handleAddDepartmentClick = () => {
+    setAddDepartmentDialogOpen(true);
+  };
+
+  const handleDepartmentAdded = async () => {
+    await fetchDepartments();
   };
 
   return (
@@ -276,6 +378,7 @@ const Dashboard = () => {
               <TabsList className="mb-4">
                 <TabsTrigger value="employees">Employees</TabsTrigger>
                 <TabsTrigger value="jobs">Jobs</TabsTrigger>
+                <TabsTrigger value="departments">Departments</TabsTrigger>
               </TabsList>
               
               <div className="flex justify-between items-center">
@@ -298,9 +401,13 @@ const Dashboard = () => {
                       </Button>
                     </div>
                   </CardTitle>
-                ) : (
+                ) : activeTab === "jobs" ? (
                   <CardTitle>
                     <span>Job Management</span>
+                  </CardTitle>
+                ) : (
+                  <CardTitle>
+                    <span>Department Management</span>
                   </CardTitle>
                 )}
               </div>
@@ -329,6 +436,19 @@ const Dashboard = () => {
                   />
                 </div>
               </TabsContent>
+
+              <TabsContent value="departments">
+                <div className="mt-4">
+                  <DepartmentList
+                    departments={departments}
+                    isLoading={isDepartmentsLoading}
+                    onDelete={handleDepartmentDelete}
+                    onUpdate={handleDepartmentUpdate}
+                    onRefresh={fetchDepartments}
+                    onAdd={handleAddDepartmentClick}
+                  />
+                </div>
+              </TabsContent>
             </Tabs>
           </CardHeader>
         </Card>
@@ -352,6 +472,20 @@ const Dashboard = () => {
           onJobUpdated={handleJobUpdateSubmit}
           jobcode={currentJobCode}
           initialJobdesc={currentJobDesc}
+        />
+
+        <DepartmentAddDialog
+          open={addDepartmentDialogOpen}
+          onOpenChange={setAddDepartmentDialogOpen}
+          onDepartmentAdded={handleDepartmentAdded}
+        />
+
+        <DepartmentEditDialog
+          open={editDepartmentDialogOpen}
+          onOpenChange={setEditDepartmentDialogOpen}
+          onDepartmentUpdated={handleDepartmentUpdateSubmit}
+          deptcode={currentDeptCode}
+          initialDeptname={currentDeptName}
         />
       </div>
     </div>
