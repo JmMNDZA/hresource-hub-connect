@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "../App";
+import { useRole } from "@/contexts/RoleContext";
 import EmployeeList from "@/components/EmployeeList";
 import EmployeeAddDialog from "@/components/EmployeeAddDialog";
 import JobList from "@/components/JobList";
@@ -15,10 +16,13 @@ import JobEditDialog from "@/components/JobEditDialog";
 import DepartmentList from "@/components/DepartmentList";
 import DepartmentAddDialog from "@/components/DepartmentAddDialog";
 import DepartmentEditDialog from "@/components/DepartmentEditDialog";
-import { Search, Plus } from "lucide-react";
+import UserManagement from "@/components/UserManagement";
+import PermissionGuard from "@/components/PermissionGuard";
+import { Search, Plus, Shield, AlertTriangle } from "lucide-react";
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { userRole, isAdmin } = useRole();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("employees");
   
@@ -364,7 +368,10 @@ const Dashboard = () => {
           <div>
             <h1 className="text-3xl font-bold text-[#1A1F2C]">HR Dashboard</h1>
             <p className="text-[#7E69AB]">
-              Welcome back, {user?.email}
+              Welcome back, {user?.email} 
+              {userRole && <span className="ml-2 px-2 py-1 bg-gray-100 rounded-full text-xs font-semibold">
+                {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
+              </span>}
             </p>
           </div>
           <Button onClick={handleSignOut} variant="outline">
@@ -372,121 +379,162 @@ const Dashboard = () => {
           </Button>
         </div>
 
-        <Card className="mb-8">
-          <CardHeader className="pb-3">
-            <Tabs defaultValue="employees" value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="mb-4">
-                <TabsTrigger value="employees">Employees</TabsTrigger>
-                <TabsTrigger value="jobs">Jobs</TabsTrigger>
-                <TabsTrigger value="departments">Departments</TabsTrigger>
-              </TabsList>
-              
-              <div className="flex justify-between items-center">
-                {activeTab === "employees" ? (
-                  <CardTitle className="flex justify-between items-center w-full">
-                    <span>Employee Management</span>
-                    <div className="flex gap-4">
-                      <div className="relative w-full max-w-xs">
-                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                          placeholder="Search employees..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="pl-10 w-full"
-                        />
+        {userRole === "blocked" ? (
+          <Card className="mb-8">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center text-amber-500">
+                <AlertTriangle className="mr-2 h-5 w-5" />
+                Account Access Restricted
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>Your account is currently blocked. Please contact an administrator for assistance.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="mb-8">
+            <CardHeader className="pb-3">
+              <Tabs defaultValue="employees" value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="mb-4">
+                  <TabsTrigger value="employees">Employees</TabsTrigger>
+                  <TabsTrigger value="jobs">Jobs</TabsTrigger>
+                  <TabsTrigger value="departments">Departments</TabsTrigger>
+                  <PermissionGuard allowedRoles={["admin"]}>
+                    <TabsTrigger value="users" className="flex items-center">
+                      <Shield className="h-4 w-4 mr-1" /> Users
+                    </TabsTrigger>
+                  </PermissionGuard>
+                </TabsList>
+                
+                <div className="flex justify-between items-center">
+                  {activeTab === "employees" ? (
+                    <CardTitle className="flex justify-between items-center w-full">
+                      <span>Employee Management</span>
+                      <div className="flex gap-4">
+                        <div className="relative w-full max-w-xs">
+                          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            placeholder="Search employees..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-10 w-full"
+                          />
+                        </div>
+                        <PermissionGuard allowedRoles={["admin"]}>
+                          <Button onClick={handleAddEmployeeClick} variant="default" className="flex items-center gap-2">
+                            <Plus className="h-4 w-4" />
+                            Add Employee
+                          </Button>
+                        </PermissionGuard>
                       </div>
-                      <Button onClick={handleAddEmployeeClick} variant="default" className="flex items-center gap-2">
-                        <Plus className="h-4 w-4" />
-                        Add Employee
-                      </Button>
-                    </div>
-                  </CardTitle>
-                ) : activeTab === "jobs" ? (
-                  <CardTitle>
-                    <span>Job Management</span>
-                  </CardTitle>
-                ) : (
-                  <CardTitle>
-                    <span>Department Management</span>
-                  </CardTitle>
-                )}
-              </div>
-              
-              <TabsContent value="employees">
-                <div className="mt-4">
-                  <EmployeeList
-                    employees={filteredEmployees}
-                    isLoading={isEmployeesLoading}
-                    onDelete={handleEmployeeDelete}
-                    onUpdate={handleEmployeeUpdate}
-                    onRefresh={fetchEmployees}
-                  />
+                    </CardTitle>
+                  ) : activeTab === "jobs" ? (
+                    <CardTitle>
+                      <span>Job Management</span>
+                    </CardTitle>
+                  ) : activeTab === "departments" ? (
+                    <CardTitle>
+                      <span>Department Management</span>
+                    </CardTitle>
+                  ) : (
+                    <CardTitle>
+                      <span>User Management</span>
+                    </CardTitle>
+                  )}
                 </div>
-              </TabsContent>
-              
-              <TabsContent value="jobs">
-                <div className="mt-4">
-                  <JobList
-                    jobs={jobs}
-                    isLoading={isJobsLoading}
-                    onDelete={handleJobDelete}
-                    onUpdate={handleJobUpdate}
-                    onRefresh={fetchJobs}
-                    onAdd={handleAddJobClick}
-                  />
-                </div>
-              </TabsContent>
+                
+                <TabsContent value="employees">
+                  <div className="mt-4">
+                    <EmployeeList
+                      employees={filteredEmployees}
+                      isLoading={isEmployeesLoading}
+                      onDelete={handleEmployeeDelete}
+                      onUpdate={handleEmployeeUpdate}
+                      onRefresh={fetchEmployees}
+                      isReadOnly={!isAdmin}
+                    />
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="jobs">
+                  <div className="mt-4">
+                    <JobList
+                      jobs={jobs}
+                      isLoading={isJobsLoading}
+                      onDelete={handleJobDelete}
+                      onUpdate={handleJobUpdate}
+                      onRefresh={fetchJobs}
+                      onAdd={handleAddJobClick}
+                      isReadOnly={!isAdmin}
+                    />
+                  </div>
+                </TabsContent>
 
-              <TabsContent value="departments">
-                <div className="mt-4">
-                  <DepartmentList
-                    departments={departments}
-                    isLoading={isDepartmentsLoading}
-                    onDelete={handleDepartmentDelete}
-                    onUpdate={handleDepartmentUpdate}
-                    onRefresh={fetchDepartments}
-                    onAdd={handleAddDepartmentClick}
-                  />
-                </div>
-              </TabsContent>
-            </Tabs>
-          </CardHeader>
-        </Card>
+                <TabsContent value="departments">
+                  <div className="mt-4">
+                    <DepartmentList
+                      departments={departments}
+                      isLoading={isDepartmentsLoading}
+                      onDelete={handleDepartmentDelete}
+                      onUpdate={handleDepartmentUpdate}
+                      onRefresh={fetchDepartments}
+                      onAdd={handleAddDepartmentClick}
+                      isReadOnly={!isAdmin}
+                    />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="users">
+                  <div className="mt-4">
+                    <PermissionGuard 
+                      allowedRoles={["admin"]}
+                      fallback={<div className="p-4 text-center text-muted-foreground">You don't have permission to access this section.</div>}
+                    >
+                      <UserManagement />
+                    </PermissionGuard>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardHeader>
+          </Card>
+        )}
         
         {/* Dialogs */}
-        <EmployeeAddDialog
-          open={addEmployeeDialogOpen}
-          onOpenChange={setAddEmployeeDialogOpen}
-          onEmployeeAdded={handleEmployeeAdded}
-        />
-        
-        <JobAddDialog
-          open={addJobDialogOpen}
-          onOpenChange={setAddJobDialogOpen}
-          onJobAdded={handleJobAdded}
-        />
-        
-        <JobEditDialog
-          open={editJobDialogOpen}
-          onOpenChange={setEditJobDialogOpen}
-          onJobUpdated={handleJobUpdateSubmit}
-          jobcode={currentJobCode}
-          initialJobdesc={currentJobDesc}
-        />
+        <PermissionGuard allowedRoles={["admin"]}>
+          <EmployeeAddDialog
+            open={addEmployeeDialogOpen}
+            onOpenChange={setAddEmployeeDialogOpen}
+            onEmployeeAdded={handleEmployeeAdded}
+          />
+          
+          <JobAddDialog
+            open={addJobDialogOpen}
+            onOpenChange={setAddJobDialogOpen}
+            onJobAdded={handleJobAdded}
+          />
+          
+          <JobEditDialog
+            open={editJobDialogOpen}
+            onOpenChange={setEditJobDialogOpen}
+            onJobUpdated={handleJobUpdateSubmit}
+            jobcode={currentJobCode}
+            initialJobdesc={currentJobDesc}
+          />
 
-        <DepartmentAddDialog
-          open={addDepartmentDialogOpen}
-          onOpenChange={setAddDepartmentDialogOpen}
-          onDepartmentAdded={handleDepartmentAdded}
-        />
+          <DepartmentAddDialog
+            open={addDepartmentDialogOpen}
+            onOpenChange={setAddDepartmentDialogOpen}
+            onDepartmentAdded={handleDepartmentAdded}
+          />
 
-        <DepartmentEditDialog
-          open={editDepartmentDialogOpen}
-          onOpenChange={setEditDepartmentDialogOpen}
-          onDepartmentUpdated={handleDepartmentUpdateSubmit}
-          deptcode={currentDeptCode}
-          initialDeptname={currentDeptName}
-        />
+          <DepartmentEditDialog
+            open={editDepartmentDialogOpen}
+            onOpenChange={setEditDepartmentDialogOpen}
+            onDepartmentUpdated={handleDepartmentUpdateSubmit}
+            deptcode={currentDeptCode}
+            initialDeptname={currentDeptName}
+          />
+        </PermissionGuard>
       </div>
     </div>
   );

@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import React, { useEffect, useState, createContext, useContext } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { RoleProvider, useRole } from "./contexts/RoleContext";
 
 // Create Auth Context
 const AuthContext = createContext<{ user: any; session: any }>({ user: null, session: null });
@@ -41,7 +42,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <AuthContext.Provider value={{ user, session }}>
-      {children}
+      <RoleProvider>{children}</RoleProvider>
     </AuthContext.Provider>
   );
 };
@@ -52,6 +53,30 @@ const RequireAuth = ({ children }: { children: React.ReactNode }) => {
   if (!user) {
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
+  return <>{children}</>;
+};
+
+const RequireAccess = ({ children }: { children: React.ReactNode }) => {
+  const { userRole, loading } = useRole();
+  const location = useLocation();
+  
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading access...</div>;
+  }
+  
+  if (userRole === "blocked") {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <div className="bg-white/90 shadow-xl rounded-2xl px-7 py-8 w-full max-w-md border border-[#e8e8fc] text-center">
+          <h1 className="text-2xl font-bold mb-4">Access Restricted</h1>
+          <p className="text-gray-600 mb-6">
+            Your account is currently blocked. Please contact an administrator for assistance.
+          </p>
+        </div>
+      </div>
+    );
+  }
+  
   return <>{children}</>;
 };
 
@@ -67,7 +92,9 @@ const App = () => (
               path="/"
               element={
                 <RequireAuth>
-                  <Index />
+                  <RequireAccess>
+                    <Index />
+                  </RequireAccess>
                 </RequireAuth>
               }
             />
@@ -75,7 +102,9 @@ const App = () => (
               path="/dashboard"
               element={
                 <RequireAuth>
-                  <Dashboard />
+                  <RequireAccess>
+                    <Dashboard />
+                  </RequireAccess>
                 </RequireAuth>
               }
             />

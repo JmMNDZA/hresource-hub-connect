@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useRole } from "@/contexts/RoleContext";
 
 interface DepartmentEditDialogProps {
   open: boolean;
@@ -31,6 +32,7 @@ const DepartmentEditDialog: React.FC<DepartmentEditDialogProps> = ({
 }) => {
   const [deptname, setDeptname] = useState(initialDeptname);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { isAdmin } = useRole();
 
   useEffect(() => {
     if (open) {
@@ -40,6 +42,15 @@ const DepartmentEditDialog: React.FC<DepartmentEditDialogProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!isAdmin) {
+      toast({
+        title: "Permission denied",
+        description: "You don't have permission to perform this action.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     try {
       setIsSubmitting(true);
@@ -100,6 +111,7 @@ const DepartmentEditDialog: React.FC<DepartmentEditDialogProps> = ({
                 onChange={(e) => setDeptname(e.target.value)}
                 placeholder="Enter department name"
                 maxLength={100}
+                disabled={!isAdmin}
               />
             </div>
           </div>
@@ -107,7 +119,7 @@ const DepartmentEditDialog: React.FC<DepartmentEditDialogProps> = ({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || !isAdmin}>
               {isSubmitting ? "Updating..." : "Update Department"}
             </Button>
           </DialogFooter>
