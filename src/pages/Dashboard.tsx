@@ -4,24 +4,40 @@ import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "../App";
 import EmployeeList from "@/components/EmployeeList";
 import EmployeeAddDialog from "@/components/EmployeeAddDialog";
+import JobList from "@/components/JobList";
+import JobAddDialog from "@/components/JobAddDialog";
+import JobEditDialog from "@/components/JobEditDialog";
 import { Search, Plus } from "lucide-react";
 
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("employees");
+  
+  // Employee state
   const [searchQuery, setSearchQuery] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isEmployeesLoading, setIsEmployeesLoading] = useState(false);
   const [employees, setEmployees] = useState<any[]>([]);
   const [filteredEmployees, setFilteredEmployees] = useState<any[]>([]);
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [addEmployeeDialogOpen, setAddEmployeeDialogOpen] = useState(false);
+  
+  // Jobs state
+  const [isJobsLoading, setIsJobsLoading] = useState(false);
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [addJobDialogOpen, setAddJobDialogOpen] = useState(false);
+  const [editJobDialogOpen, setEditJobDialogOpen] = useState(false);
+  const [currentJobCode, setCurrentJobCode] = useState("");
+  const [currentJobDesc, setCurrentJobDesc] = useState("");
 
   useEffect(() => {
     fetchEmployees();
+    fetchJobs();
   }, []);
 
   useEffect(() => {
@@ -45,7 +61,7 @@ const Dashboard = () => {
   }, [searchQuery, employees]);
 
   const fetchEmployees = async () => {
-    setIsLoading(true);
+    setIsEmployeesLoading(true);
     try {
       const { data, error } = await supabase
         .from("employee")
@@ -66,7 +82,32 @@ const Dashboard = () => {
       });
       console.error("Error fetching employees:", error);
     } finally {
-      setIsLoading(false);
+      setIsEmployeesLoading(false);
+    }
+  };
+
+  const fetchJobs = async () => {
+    setIsJobsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("job")
+        .select("*")
+        .order("jobcode", { ascending: true });
+
+      if (error) {
+        throw error;
+      }
+
+      setJobs(data || []);
+    } catch (error: any) {
+      toast({
+        title: "Error fetching jobs",
+        description: error.message,
+        variant: "destructive",
+      });
+      console.error("Error fetching jobs:", error);
+    } finally {
+      setIsJobsLoading(false);
     }
   };
 
@@ -142,12 +183,77 @@ const Dashboard = () => {
     }
   };
 
+  const handleJobDelete = async (jobcode: string) => {
+    try {
+      // Check if job is used in jobhistory
+      const { data: jobHistory, error: checkError } = await supabase
+        .from("jobhistory")
+        .select("empno")
+        .eq("jobcode", jobcode)
+        .limit(1);
+
+      if (checkError) throw checkError;
+
+      if (jobHistory && jobHistory.length > 0) {
+        toast({
+          title: "Cannot delete job",
+          description: "This job is associated with employee history records and cannot be deleted",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Delete the job record
+      const { error } = await supabase
+        .from("job")
+        .delete()
+        .eq("jobcode", jobcode);
+
+      if (error) throw error;
+
+      setJobs(prevJobs =>
+        prevJobs.filter(job => job.jobcode !== jobcode)
+      );
+
+      toast({
+        title: "Job deleted",
+        description: "Job has been successfully removed",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error deleting job",
+        description: error.message,
+        variant: "destructive",
+      });
+      console.error("Error deleting job:", error);
+      throw error;
+    }
+  };
+
+  const handleJobUpdate = async (jobcode: string, updatedData: { jobdesc: string }) => {
+    setCurrentJobCode(jobcode);
+    setCurrentJobDesc(updatedData.jobdesc);
+    setEditJobDialogOpen(true);
+  };
+
+  const handleJobUpdateSubmit = async () => {
+    await fetchJobs();
+  };
+
   const handleAddEmployeeClick = () => {
-    setAddDialogOpen(true);
+    setAddEmployeeDialogOpen(true);
+  };
+
+  const handleAddJobClick = () => {
+    setAddJobDialogOpen(true);
   };
 
   const handleEmployeeAdded = async () => {
     await fetchEmployees();
+  };
+
+  const handleJobAdded = async () => {
+    await fetchJobs();
   };
 
   return (
@@ -167,39 +273,84 @@ const Dashboard = () => {
 
         <Card className="mb-8">
           <CardHeader className="pb-3">
-            <CardTitle className="flex justify-between items-center">
-              <span>Employee Management</span>
-              <div className="flex gap-4">
-                <div className="relative w-full max-w-xs">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Search employees..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 w-full"
-                  />
-                </div>
-                <Button onClick={handleAddEmployeeClick} variant="default" className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Add Employee
-                </Button>
-              </div>
-            </CardTitle>
+            <Tabs defaultValue="employees" value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="mb-4">
+                <TabsTrigger value="employees">Employees</TabsTrigger>
+                <TabsTrigger value="jobs">Jobs</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="employees">
+                <CardTitle className="flex justify-between items-center">
+                  <span>Employee Management</span>
+                  <div className="flex gap-4">
+                    <div className="relative w-full max-w-xs">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        placeholder="Search employees..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10 w-full"
+                      />
+                    </div>
+                    <Button onClick={handleAddEmployeeClick} variant="default" className="flex items-center gap-2">
+                      <Plus className="h-4 w-4" />
+                      Add Employee
+                    </Button>
+                  </div>
+                </CardTitle>
+              </TabsContent>
+              
+              <TabsContent value="jobs">
+                <CardTitle>
+                  <span>Job Management</span>
+                </CardTitle>
+              </TabsContent>
+            </Tabs>
           </CardHeader>
+          
           <CardContent>
-            <EmployeeList
-              employees={filteredEmployees}
-              isLoading={isLoading}
-              onDelete={handleEmployeeDelete}
-              onUpdate={handleEmployeeUpdate}
-              onRefresh={fetchEmployees}
-            />
+            <TabsContent value="employees" className="mt-0">
+              <EmployeeList
+                employees={filteredEmployees}
+                isLoading={isEmployeesLoading}
+                onDelete={handleEmployeeDelete}
+                onUpdate={handleEmployeeUpdate}
+                onRefresh={fetchEmployees}
+              />
+            </TabsContent>
+            
+            <TabsContent value="jobs" className="mt-0">
+              <JobList
+                jobs={jobs}
+                isLoading={isJobsLoading}
+                onDelete={handleJobDelete}
+                onUpdate={handleJobUpdate}
+                onRefresh={fetchJobs}
+                onAdd={handleAddJobClick}
+              />
+            </TabsContent>
           </CardContent>
         </Card>
+        
+        {/* Dialogs */}
         <EmployeeAddDialog
-          open={addDialogOpen}
-          onOpenChange={setAddDialogOpen}
+          open={addEmployeeDialogOpen}
+          onOpenChange={setAddEmployeeDialogOpen}
           onEmployeeAdded={handleEmployeeAdded}
+        />
+        
+        <JobAddDialog
+          open={addJobDialogOpen}
+          onOpenChange={setAddJobDialogOpen}
+          onJobAdded={handleJobAdded}
+        />
+        
+        <JobEditDialog
+          open={editJobDialogOpen}
+          onOpenChange={setEditJobDialogOpen}
+          onJobUpdated={handleJobUpdateSubmit}
+          jobcode={currentJobCode}
+          initialJobdesc={currentJobDesc}
         />
       </div>
     </div>
