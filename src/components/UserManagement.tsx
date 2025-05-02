@@ -18,14 +18,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { useRole } from "@/contexts/RoleContext";
+import { useRole, UserRole } from "@/contexts/RoleContext";
 import { toast } from "@/hooks/use-toast";
 import { UserCircle, Save } from "lucide-react";
 
 interface User {
   id: string;
   email: string;
-  role: string;
+  role: UserRole;
 }
 
 const UserManagement: React.FC = () => {
@@ -61,7 +61,7 @@ const UserManagement: React.FC = () => {
     }
   };
 
-  const handleRoleChange = async (userId: string, newRole: string) => {
+  const handleRoleChange = async (userId: string, newRole: UserRole) => {
     if (!isAdmin) return;
     
     try {
@@ -130,7 +130,7 @@ const UserManagement: React.FC = () => {
                     <TableCell>
                       <Select
                         defaultValue={user.role}
-                        onValueChange={(value) => handleRoleChange(user.id, value)}
+                        onValueChange={(value: UserRole) => handleRoleChange(user.id, value)}
                       >
                         <SelectTrigger className="w-32">
                           <SelectValue placeholder="Select a role" />

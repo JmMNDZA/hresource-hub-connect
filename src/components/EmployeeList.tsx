@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import {
   Table,
@@ -20,6 +21,7 @@ interface EmployeeListProps {
   onDelete: (empno: string) => Promise<void>;
   onUpdate: (empno: string, updatedData: any) => Promise<void>;
   onRefresh: () => Promise<void>;
+  isReadOnly?: boolean;
 }
 
 const EmployeeList: React.FC<EmployeeListProps> = ({
@@ -28,6 +30,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   onDelete,
   onUpdate,
   onRefresh,
+  isReadOnly = false,
 }) => {
   const [editingEmployee, setEditingEmployee] = useState<any | null>(null);
   const [jobHistoryEmployee, setJobHistoryEmployee] = useState<any | null>(null);
@@ -47,10 +50,13 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   };
 
   const handleEditClick = (employee: any) => {
+    if (isReadOnly) return;
     setEditingEmployee(employee);
   };
 
   const handleDeleteClick = async (empno: string) => {
+    if (isReadOnly) return;
+    
     if (window.confirm("Are you sure you want to delete this employee? This will also delete their entire job history.")) {
       setDeletingEmpno(empno);
       try {
@@ -162,7 +168,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                   Separation Date
                   <ArrowUpDown className="ml-2 h-4 w-4 inline" />
                 </TableHead>
-                <TableHead>Actions</TableHead>
+                {!isReadOnly && <TableHead>Actions</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -175,31 +181,33 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                   <TableCell>{formatDate(employee.birthdate)}</TableCell>
                   <TableCell>{formatDate(employee.hiredate)}</TableCell>
                   <TableCell>{formatDate(employee.sepdate)}</TableCell>
-                  <TableCell className="flex space-x-2">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => handleEditClick(employee)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => handleDeleteClick(employee.empno)}
-                      disabled={deletingEmpno === employee.empno}
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => handleJobHistoryClick(employee)}
-                      title="Manage Job History"
-                    >
-                      <Briefcase className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
+                  {!isReadOnly && (
+                    <TableCell className="flex space-x-2">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => handleEditClick(employee)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => handleDeleteClick(employee.empno)}
+                        disabled={deletingEmpno === employee.empno}
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => handleJobHistoryClick(employee)}
+                        title="Manage Job History"
+                      >
+                        <Briefcase className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>

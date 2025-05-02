@@ -25,6 +25,7 @@ interface JobListProps {
   onUpdate: (jobcode: string, updatedData: { jobdesc: string }) => Promise<void>;
   onRefresh: () => Promise<void>;
   onAdd: () => void;
+  isReadOnly?: boolean;
 }
 
 const JobList: React.FC<JobListProps> = ({
@@ -34,6 +35,7 @@ const JobList: React.FC<JobListProps> = ({
   onUpdate,
   onRefresh,
   onAdd,
+  isReadOnly = false,
 }) => {
   const [deleting, setDeleting] = useState<string | null>(null);
 
@@ -50,11 +52,13 @@ const JobList: React.FC<JobListProps> = ({
 
   return (
     <div>
-      <div className="flex justify-end mb-4">
-        <Button onClick={onAdd} variant="default">
-          Add New Job
-        </Button>
-      </div>
+      {!isReadOnly && (
+        <div className="flex justify-end mb-4">
+          <Button onClick={onAdd} variant="default">
+            Add New Job
+          </Button>
+        </div>
+      )}
 
       <div className="rounded-md border">
         <Table>
@@ -62,19 +66,19 @@ const JobList: React.FC<JobListProps> = ({
             <TableRow>
               <TableHead className="w-[150px]">Job Code</TableHead>
               <TableHead>Job Description</TableHead>
-              <TableHead className="text-right w-[150px]">Actions</TableHead>
+              {!isReadOnly && <TableHead className="text-right w-[150px]">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={3} className="h-24 text-center">
+                <TableCell colSpan={isReadOnly ? 2 : 3} className="h-24 text-center">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : jobs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={3} className="h-24 text-center">
+                <TableCell colSpan={isReadOnly ? 2 : 3} className="h-24 text-center">
                   No jobs found.
                 </TableCell>
               </TableRow>
@@ -83,26 +87,28 @@ const JobList: React.FC<JobListProps> = ({
                 <TableRow key={job.jobcode}>
                   <TableCell className="font-medium">{job.jobcode}</TableCell>
                   <TableCell>{job.jobdesc || "—"}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onUpdate(job.jobcode, { jobdesc: job.jobdesc || "" })}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(job.jobcode)}
-                        disabled={deleting === job.jobcode}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+                  {!isReadOnly && (
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onUpdate(job.jobcode, { jobdesc: job.jobdesc || "" })}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDelete(job.jobcode)}
+                          disabled={deleting === job.jobcode}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             )}
