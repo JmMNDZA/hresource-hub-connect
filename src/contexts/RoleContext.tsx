@@ -39,11 +39,12 @@ export const RoleProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
+      // Use maybeSingle instead of single to handle the case where no profile exists
       const { data, error } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Error fetching user role:", error);
@@ -53,6 +54,29 @@ export const RoleProvider: React.FC<{ children: React.ReactNode }> = ({ children
           variant: "destructive",
         });
         setUserRole(null);
+      } else if (!data) {
+        // Handle case where no profile exists
+        console.log("No profile found for user. Creating a new profile...");
+        
+        // Create a default profile for the user with 'blocked' role
+        const { error: insertError } = await supabase
+          .from("profiles")
+          .insert({
+            id: user.id,
+            email: user.email || "",
+            role: "blocked" as UserRole
+          });
+          
+        if (insertError) {
+          console.error("Error creating user profile:", insertError);
+          toast({
+            title: "Error creating user profile",
+            description: insertError.message,
+            variant: "destructive",
+          });
+        } else {
+          setUserRole("blocked"); // Set default role
+        }
       } else {
         setUserRole(data.role as UserRole);
       }
