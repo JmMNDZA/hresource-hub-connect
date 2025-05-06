@@ -9,9 +9,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import JobHistoryListDialog from "./JobHistoryListDialog";
 
 interface Job {
   jobcode: string;
@@ -38,6 +39,7 @@ const JobList: React.FC<JobListProps> = ({
   isReadOnly = false,
 }) => {
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [viewingJob, setViewingJob] = useState<Job | null>(null);
 
   const handleDelete = async (jobcode: string) => {
     try {
@@ -66,19 +68,19 @@ const JobList: React.FC<JobListProps> = ({
             <TableRow>
               <TableHead className="w-[150px]">Job Code</TableHead>
               <TableHead>Job Description</TableHead>
-              {!isReadOnly && <TableHead className="text-right w-[150px]">Actions</TableHead>}
+              <TableHead className="text-right w-[200px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={isReadOnly ? 2 : 3} className="h-24 text-center">
+                <TableCell colSpan={3} className="h-24 text-center">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : jobs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={isReadOnly ? 2 : 3} className="h-24 text-center">
+                <TableCell colSpan={3} className="h-24 text-center">
                   No jobs found.
                 </TableCell>
               </TableRow>
@@ -87,34 +89,55 @@ const JobList: React.FC<JobListProps> = ({
                 <TableRow key={job.jobcode}>
                   <TableCell className="font-medium">{job.jobcode}</TableCell>
                   <TableCell>{job.jobdesc || "—"}</TableCell>
-                  {!isReadOnly && (
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onUpdate(job.jobcode, { jobdesc: job.jobdesc || "" })}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => handleDelete(job.jobcode)}
-                          disabled={deleting === job.jobcode}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  )}
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setViewingJob(job)}
+                        className="flex items-center gap-1"
+                      >
+                        <Eye className="h-4 w-4" />
+                        <span>View Employees</span>
+                      </Button>
+                      {!isReadOnly && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onUpdate(job.jobcode, { jobdesc: job.jobdesc || "" })}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => handleDelete(job.jobcode)}
+                            disabled={deleting === job.jobcode}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))
             )}
           </TableBody>
         </Table>
       </div>
+
+      {/* Job History Dialog */}
+      {viewingJob && (
+        <JobHistoryListDialog
+          type="job"
+          code={viewingJob.jobcode}
+          name={viewingJob.jobdesc || ""}
+          onClose={() => setViewingJob(null)}
+        />
+      )}
     </div>
   );
 };
