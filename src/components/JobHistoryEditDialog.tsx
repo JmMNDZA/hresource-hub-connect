@@ -24,7 +24,10 @@ interface JobHistoryEditDialogProps {
     empno: string;
     effdate: string;
     jobcode: string;
+    jobdesc?: string;
+    job_title?: string;
     deptcode: string | null;
+    dept_name?: string | null;
     salary: number | null;
   };
   onClose: () => void;
@@ -195,7 +198,7 @@ const JobHistoryEditDialog: React.FC<JobHistoryEditDialogProps> = ({
               <SelectContent>
                 {jobs.map((job) => (
                   <SelectItem key={job.jobcode} value={job.jobcode}>
-                    {job.jobdesc} ({job.jobcode})
+                    {job.jobdesc}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -214,7 +217,7 @@ const JobHistoryEditDialog: React.FC<JobHistoryEditDialogProps> = ({
               <SelectContent>
                 {departments.map((dept) => (
                   <SelectItem key={dept.deptcode} value={dept.deptcode}>
-                    {dept.deptname} ({dept.deptcode})
+                    {dept.deptname}
                   </SelectItem>
                 ))}
               </SelectContent>
