@@ -121,44 +121,28 @@ const JobHistoryEditDialog: React.FC<JobHistoryEditDialogProps> = ({
         throw new Error("Please fill in all required fields");
       }
 
-      // If primary key has changed, we need to delete the old record and insert a new one
-      if (form.effdate !== originalPK.effdate || form.jobcode !== originalPK.jobcode) {
-        // First delete the old record
-        const { error: deleteError } = await supabase
-          .from("jobhistory")
-          .delete()
-          .eq("empno", originalPK.empno)
-          .eq("effdate", originalPK.effdate)
-          .eq("jobcode", originalPK.jobcode);
+      // Always delete the old record and insert a new one to handle all possible changes
+      const { error: deleteError } = await supabase
+        .from("jobhistory")
+        .delete()
+        .eq("empno", originalPK.empno)
+        .eq("effdate", originalPK.effdate)
+        .eq("jobcode", originalPK.jobcode);
 
-        if (deleteError) throw deleteError;
+      if (deleteError) throw deleteError;
 
-        // Then insert the new record
-        const { error: insertError } = await supabase
-          .from("jobhistory")
-          .insert([{
-            empno: originalPK.empno,
-            effdate: form.effdate,
-            jobcode: form.jobcode,
-            deptcode: form.deptcode || null,
-            salary: form.salary ? parseFloat(form.salary) : null,
-          }]);
+      // Insert the new record with possibly updated primary key values
+      const { error: insertError } = await supabase
+        .from("jobhistory")
+        .insert([{
+          empno: originalPK.empno, // We don't update employee number
+          effdate: form.effdate,
+          jobcode: form.jobcode,
+          deptcode: form.deptcode || null,
+          salary: form.salary ? parseFloat(form.salary) : null,
+        }]);
 
-        if (insertError) throw insertError;
-      } else {
-        // Just update non-key fields
-        const { error: updateError } = await supabase
-          .from("jobhistory")
-          .update({
-            deptcode: form.deptcode || null,
-            salary: form.salary ? parseFloat(form.salary) : null,
-          })
-          .eq("empno", originalPK.empno)
-          .eq("effdate", originalPK.effdate)
-          .eq("jobcode", originalPK.jobcode);
-
-        if (updateError) throw updateError;
-      }
+      if (insertError) throw insertError;
 
       toast({
         title: "Job history updated",

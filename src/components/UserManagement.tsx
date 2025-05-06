@@ -20,7 +20,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useRole, UserRole } from "@/contexts/RoleContext";
 import { toast } from "@/hooks/use-toast";
-import { UserCircle, Save } from "lucide-react";
+import { UserCircle } from "lucide-react";
 
 interface User {
   id: string;
@@ -120,7 +120,6 @@ const UserManagement: React.FC = () => {
                 <TableRow>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
-                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -141,13 +140,10 @@ const UserManagement: React.FC = () => {
                           <SelectItem value="blocked">Blocked</SelectItem>
                         </SelectContent>
                       </Select>
-                    </TableCell>
-                    <TableCell>
                       {savingUserId === user.id && (
-                        <div className="animate-pulse flex items-center">
-                          <Save className="h-4 w-4 mr-2" />
+                        <span className="ml-2 text-xs text-muted-foreground animate-pulse">
                           Saving...
-                        </div>
+                        </span>
                       )}
                     </TableCell>
                   </TableRow>
