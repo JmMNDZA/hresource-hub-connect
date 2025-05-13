@@ -70,13 +70,14 @@ const JobHistoryListDialog: React.FC<JobHistoryListDialogProps> = ({
   const fetchJobHistory = async () => {
     setLoading(true);
     try {
+      // Use specific column names to avoid relationship conflicts
       const query = supabase
         .from("jobhistory")
         .select(`
           *,
-          employee:empno (firstname, lastname),
-          job:jobcode (jobdesc),
-          department:deptcode (deptname)
+          employee:empno(firstname, lastname),
+          job:jobcode(jobdesc),
+          department:deptcode(deptname)
         `)
         .order("effdate", { ascending: false });
 
@@ -90,7 +91,10 @@ const JobHistoryListDialog: React.FC<JobHistoryListDialogProps> = ({
       const { data, error } = await query;
 
       if (error) throw error;
-      setJobHistory(data || []);
+      
+      // Ensure proper type casting
+      const typedData = data as unknown as JobHistoryEntry[];
+      setJobHistory(typedData || []);
     } catch (error: any) {
       toast({
         title: "Error fetching job history",
@@ -242,12 +246,17 @@ const JobHistoryListDialog: React.FC<JobHistoryListDialogProps> = ({
 
       {currentEntry && (
         <JobHistoryEditDialog
-          open={editDialogOpen}
-          onOpenChange={setEditDialogOpen}
-          empno={currentEntry.empno}
-          jobcode={currentEntry.jobcode}
-          effdate={currentEntry.effdate}
-          onJobHistoryUpdated={fetchJobHistory}
+          record={{
+            empno: currentEntry.empno,
+            effdate: currentEntry.effdate,
+            jobcode: currentEntry.jobcode,
+            deptcode: currentEntry.deptcode || "",
+            salary: currentEntry.salary,
+            jobdesc: currentEntry.job?.jobdesc || "",
+            dept_name: currentEntry.department?.deptname || ""
+          }}
+          onClose={() => setEditDialogOpen(false)}
+          onSuccess={fetchJobHistory}
         />
       )}
     </>
