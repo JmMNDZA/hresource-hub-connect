@@ -70,14 +70,18 @@ const JobHistoryListDialog: React.FC<JobHistoryListDialogProps> = ({
   const fetchJobHistory = async () => {
     setLoading(true);
     try {
-      // Use specific column names to avoid relationship conflicts
+      // Fix the relationship query by using proper foreign key hints
       const query = supabase
         .from("jobhistory")
         .select(`
-          *,
-          employee:empno(firstname, lastname),
-          job:jobcode(jobdesc),
-          department:deptcode(deptname)
+          empno,
+          jobcode,
+          deptcode,
+          effdate,
+          salary,
+          employee:employee!jobhistory_empno_fkey(firstname, lastname),
+          job:job!jobhistory_jobcode_fkey(jobdesc),
+          department:department!jobhistory_deptcode_fkey(deptname)
         `)
         .order("effdate", { ascending: false });
 
@@ -166,7 +170,8 @@ const JobHistoryListDialog: React.FC<JobHistoryListDialogProps> = ({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Employee</TableHead>
+                  <TableHead>Employee ID</TableHead>
+                  <TableHead>Employee Name</TableHead>
                   <TableHead>Job</TableHead>
                   <TableHead>Department</TableHead>
                   <TableHead>Effective Date</TableHead>
@@ -177,19 +182,20 @@ const JobHistoryListDialog: React.FC<JobHistoryListDialogProps> = ({
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
+                    <TableCell colSpan={7} className="h-24 text-center">
                       Loading...
                     </TableCell>
                   </TableRow>
                 ) : jobHistory.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
+                    <TableCell colSpan={7} className="h-24 text-center">
                       No job history entries found.
                     </TableCell>
                   </TableRow>
                 ) : (
                   jobHistory.map((entry) => (
                     <TableRow key={`${entry.empno}-${entry.jobcode}-${entry.effdate}`}>
+                      <TableCell>{entry.empno}</TableCell>
                       <TableCell>
                         {entry.employee?.firstname} {entry.employee?.lastname}
                       </TableCell>
