@@ -9,8 +9,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, List } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import JobHistoryListDialog from "./JobHistoryListDialog";
 
 interface Department {
   deptcode: string;
@@ -37,6 +38,8 @@ const DepartmentList: React.FC<DepartmentListProps> = ({
   isReadOnly = false,
 }) => {
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [jobHistoryDialogOpen, setJobHistoryDialogOpen] = useState(false);
+  const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
 
   const handleDelete = async (deptcode: string) => {
     try {
@@ -51,6 +54,11 @@ const DepartmentList: React.FC<DepartmentListProps> = ({
 
   const handleUpdate = (deptcode: string, deptname: string) => {
     onUpdate(deptcode, { deptname });
+  };
+
+  const handleViewEmployees = (department: Department) => {
+    setSelectedDepartment(department);
+    setJobHistoryDialogOpen(true);
   };
 
   return (
@@ -69,7 +77,7 @@ const DepartmentList: React.FC<DepartmentListProps> = ({
             <TableRow>
               <TableHead className="w-[150px]">Department Code</TableHead>
               <TableHead>Department Name</TableHead>
-              {!isReadOnly && <TableHead className="text-right w-[150px]">Actions</TableHead>}
+              <TableHead className="text-right w-[200px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -90,34 +98,55 @@ const DepartmentList: React.FC<DepartmentListProps> = ({
                 <TableRow key={department.deptcode}>
                   <TableCell className="font-medium">{department.deptcode}</TableCell>
                   <TableCell>{department.deptname || "—"}</TableCell>
-                  {!isReadOnly && (
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleUpdate(department.deptcode, department.deptname || "")}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => handleDelete(department.deptcode)}
-                          disabled={deleting === department.deptcode}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  )}
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewEmployees(department)}
+                        className="flex items-center gap-1"
+                      >
+                        <List className="h-4 w-4" />
+                        View Employees
+                      </Button>
+                      {!isReadOnly && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleUpdate(department.deptcode, department.deptname || "")}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => handleDelete(department.deptcode)}
+                            disabled={deleting === department.deptcode}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))
             )}
           </TableBody>
         </Table>
       </div>
+
+      {selectedDepartment && (
+        <JobHistoryListDialog
+          open={jobHistoryDialogOpen}
+          onOpenChange={setJobHistoryDialogOpen}
+          filterType="department"
+          filterCode={selectedDepartment.deptcode}
+          title={`Employees in ${selectedDepartment.deptname || selectedDepartment.deptcode}`}
+        />
+      )}
     </div>
   );
 };
