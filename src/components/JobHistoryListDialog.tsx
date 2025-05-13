@@ -31,6 +31,7 @@ interface JobHistoryEntry {
   employee?: {
     firstname: string | null;
     lastname: string | null;
+    sepdate: string | null;
   };
   job?: {
     jobdesc: string | null;
@@ -70,7 +71,7 @@ const JobHistoryListDialog: React.FC<JobHistoryListDialogProps> = ({
   const fetchJobHistory = async () => {
     setLoading(true);
     try {
-      // Fix the relationship query by using proper foreign key hints
+      // First, get all job history entries for the specified filter
       const query = supabase
         .from("jobhistory")
         .select(`
@@ -79,7 +80,7 @@ const JobHistoryListDialog: React.FC<JobHistoryListDialogProps> = ({
           deptcode,
           effdate,
           salary,
-          employee:employee!jobhistory_empno_fkey(firstname, lastname),
+          employee:employee!jobhistory_empno_fkey(firstname, lastname, sepdate),
           job:job!jobhistory_jobcode_fkey(jobdesc),
           department:department!jobhistory_deptcode_fkey(deptname)
         `)
@@ -96,9 +97,38 @@ const JobHistoryListDialog: React.FC<JobHistoryListDialogProps> = ({
 
       if (error) throw error;
       
-      // Ensure proper type casting
-      const typedData = data as unknown as JobHistoryEntry[];
-      setJobHistory(typedData || []);
+      if (!data || data.length === 0) {
+        setJobHistory([]);
+        setLoading(false);
+        return;
+      }
+      
+      // Filter out employees with separation dates
+      let filteredData = data.filter(entry => entry.employee && entry.employee.sepdate === null);
+      
+      // Process to get only the latest entry per employee
+      const latestEntries = filteredData.reduce((acc, current) => {
+        const existingEntry = acc.find(item => item.empno === current.empno);
+        
+        if (!existingEntry) {
+          // Add if no entry exists for this employee
+          acc.push(current);
+        } else {
+          // Replace if this entry is newer than the existing one
+          const currentDate = new Date(current.effdate);
+          const existingDate = new Date(existingEntry.effdate);
+          
+          if (currentDate > existingDate) {
+            const index = acc.findIndex(item => item.empno === current.empno);
+            acc[index] = current;
+          }
+        }
+        
+        return acc;
+      }, [] as JobHistoryEntry[]);
+      
+      // Ensure proper type casting and set state
+      setJobHistory(latestEntries);
     } catch (error: any) {
       toast({
         title: "Error fetching job history",
